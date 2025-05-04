@@ -122,6 +122,7 @@
             let isFiring = false
             // Counter variable to keep track of the number of bullets
             var bulletCount = 0;
+            let amuleto;
 
 
             // Create the renderer
@@ -227,6 +228,8 @@
                     abandonedBuilding = gltf.scene;
                     abandonedBuilding.position.y = .008
                     scene.add(abandonedBuilding);
+
+                    spawnAmuleto();
                 });
 
 
@@ -293,6 +296,29 @@
                 return false; // No collision
             }
 
+            function spawnAmuleto() {
+                if (amuleto) {
+                    scene.remove(amuleto); // Elimina el anterior
+                }
+
+                loader.load('./models/gltf/amuleto_de_magia.glb', function (gltf) {
+                    amuleto = gltf.scene;
+                    amuleto.scale.set(0.005, 0.005, 0.005); // Ajusta el tamaño si es necesario
+
+                    // Posición aleatoria dentro del cuarto (ajusta los límites según el tamaño de tu habitación)
+                    const minX = -4, maxX = 4;
+                    const minY = 0.2, maxY = 2;
+                    const minZ = -4, maxZ = 4;
+
+                    const x = THREE.MathUtils.randFloat(minX, maxX);
+                    const y = THREE.MathUtils.randFloat(minY, maxY);
+                    const z = THREE.MathUtils.randFloat(minZ, maxZ);
+
+                    amuleto.position.set(x, y, z);
+
+                    scene.add(amuleto);
+                });
+            }
 
             function animate() {
                 requestAnimationFrame(animate);
@@ -456,69 +482,78 @@
             }
 
             function checkBulletCollision() {
-                bullets.forEach(function (bullet) {
-                    var bulletPosition = bullet.position;
-                    var bulletDirection = bullet.direction; // Assuming each bullet has a direction property
+    bullets.forEach(function (bullet, index) {
+        const bulletPosition = bullet.position;
+        const bulletDirection = bullet.direction;
 
-                    // Create a raycaster for the current bullet
-                    var raycaster = new THREE.Raycaster(bulletPosition, bulletDirection);
+        // Crear raycaster para esta bala
+        const raycaster = new THREE.Raycaster(bulletPosition, bulletDirection);
 
-                    // Find intersections between the ray and the abandonedBuilding object
-                    var intersects = raycaster.intersectObject(abandonedBuilding, true);
-
-                    if (intersects.length > 0) {
-
-                        // Play the bullet ricochet sound every 5 bullets
-                        if (bulletCount % 15 === 0) {
-                            playBulletRicochetSound();
-                        }
-                        bulletCount++;
-
-                        var intersect = intersects[0];
-                        var point = intersect.point;
-                        var faceNormal = intersect.face.normal;
-
-                        // Create and position the mesh at the intersection point
-                        var offset = new THREE.Vector3(0, 0, 0.01); // Increase the offset value to avoid z-fighting
-                        var insertionOffset = new THREE.Vector3(0, 0.01, 0); // Adjust the insertion offset as needed
-
-                        var loader = new THREE.TextureLoader();
-                        var material = new THREE.MeshBasicMaterial({
-                            map: loader.load('./images/bullet-hole.png'),
-                            side: THREE.DoubleSide,
-                            transparent: true,
-                            depthWrite: true,
-                        });
-
-                        var geometry = new THREE.PlaneGeometry(0.08, 0.08);
-                        var bulletHoleMesh = new THREE.Mesh(geometry, material);
-
-                        var insertionPoint = new THREE.Vector3().copy(point).add(offset).add(insertionOffset);
-
-                        bulletHoleMesh.position.copy(insertionPoint);
-                        scene.add(bulletHoleMesh);
-                        bulletHoles.push(bulletHoleMesh);
-
-
-                        // Fade out the mesh gradually over time
-                        var opacity = 1.0;
-                        var fadeOutDuration = 5000; // 5 seconds
-                        var fadeOutInterval = 50; // Update every 50 milliseconds
-
-                        var fadeOutTimer = setInterval(function () {
-                            opacity -= fadeOutInterval / fadeOutDuration;
-                            if (opacity <= 0) {
-                                opacity = 0;
-                                clearInterval(fadeOutTimer);
-                                scene.remove(bulletHoleMesh);
-                                bulletHoles.splice(bulletHoles.indexOf(bulletHoleMesh), 1);
-                            }
-                            bulletHoleMesh.material.opacity = opacity;
-                        }, fadeOutInterval);
-                    }
-                });
+        // 🔹 Primero verificar si golpea el amuleto
+        if (amuleto) {
+            const amuletoIntersects = raycaster.intersectObject(amuleto, true);
+            if (amuletoIntersects.length > 0) {
+                scene.remove(amuleto);
+                spawnAmuleto(); // Reaparecer uno nuevo
+                scene.remove(bullet);
+                bullets.splice(index, 1); // Eliminar la bala que impactó
+                return; // Saltamos el resto
             }
+        }
 
+        // 🔹 Verificar si golpea el edificio
+        const intersects = raycaster.intersectObject(abandonedBuilding, true);
+        if (intersects.length > 0) {
+            // Sonido de rebote cada 15 disparos
+            if (bulletCount % 15 === 0) {
+                playBulletRicochetSound();
+            }
+            bulletCount++;
+
+            const intersect = intersects[0];
+            const point = intersect.point;
+
+            // Crear agujero de bala
+            const offset = new THREE.Vector3(0, 0, 0.01);
+            const insertionOffset = new THREE.Vector3(0, 0.01, 0);
+            const insertionPoint = new THREE.Vector3().copy(point).add(offset).add(insertionOffset);
+
+            const textureLoader = new THREE.TextureLoader();
+            const material = new THREE.MeshBasicMaterial({
+                map: textureLoader.load('./images/bullet-hole.png'),
+                side: THREE.DoubleSide,
+                transparent: true,
+                depthWrite: true,
+            });
+
+            const geometry = new THREE.PlaneGeometry(0.08, 0.08);
+            const bulletHoleMesh = new THREE.Mesh(geometry, material);
+            bulletHoleMesh.position.copy(insertionPoint);
+            scene.add(bulletHoleMesh);
+            bulletHoles.push(bulletHoleMesh);
+
+            // Animar desaparición del agujero de bala
+            let opacity = 1.0;
+            const fadeOutDuration = 5000;
+            const fadeOutInterval = 50;
+
+            const fadeOutTimer = setInterval(() => {
+                opacity -= fadeOutInterval / fadeOutDuration;
+                if (opacity <= 0) {
+                    opacity = 0;
+                    clearInterval(fadeOutTimer);
+                    scene.remove(bulletHoleMesh);
+                    bulletHoles.splice(bulletHoles.indexOf(bulletHoleMesh), 1);
+                }
+                bulletHoleMesh.material.opacity = opacity;
+            }, fadeOutInterval);
+
+            // Eliminar la bala que impactó
+            scene.remove(bullet);
+            bullets.splice(index, 1);
+        }
+    });
+}
 
             // Function to toggle the light on or off based on the isFiring variable
             function toggleLight(isFiring) {

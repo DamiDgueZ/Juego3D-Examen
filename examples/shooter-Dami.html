@@ -916,9 +916,16 @@
 
             document.getElementById('restartButton').addEventListener('click', () => {
                 document.getElementById('gameOverWindow').style.display = 'none';
+
+                // Mostrar nuevamente el menú de inicio con instrucciones
+                document.getElementById('blocker').style.display = 'block';
+                document.getElementById('instructions').style.display = '';
+                document.getElementById('pauseOverlay').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'none';
+
+                // Resetear estados para iniciar manualmente más tarde
                 gameStarted = false;
-                startGame();
-                controls.lock(); // para reiniciar en modo juego
+                gamePaused = false;
             });
 
             document.getElementById('startButton').addEventListener('click', () => {
@@ -945,6 +952,19 @@
             document.getElementById('resumeButton').addEventListener('click', () => {
                 document.getElementById('pauseOverlay').style.display = 'none';
                 controls.lock();
+                gamePaused = false;
+            });
+
+            window.addEventListener('load', () => {
+                // Mostrar menú inicial
+                document.getElementById('blocker').style.display = 'block';
+                document.getElementById('instructions').style.display = '';
+                document.getElementById('pauseOverlay').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'none';
+                document.getElementById('gameOverWindow').style.display = 'none';
+
+                // Estados lógicos iniciales
+                gameStarted = false;
                 gamePaused = false;
             });
 

@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Damaris D.Z Shooter 1ra persona</title>
+
+        <style>
+            @font-face {
+                font-family: 'Robus-BWqOd';
+                src: url('./fonts/Robus-BWqOd.otf') format('opentype');
+            }
+
+            body {
+                margin: 0;
+            }
+
+            canvas {
+                display: block;
+            }
+
+            #blocker {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+            }
+
+            #instructions {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+            }
+
+            #crosshair {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 100px;
+                height: 100px;
+                display: none; /* Hide the crosshair by default */
+            }
+
+            #playButton {
+                font-family: 'Robus-BWqOd';
+                font-size: 3vw;
+                color: white;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.75);
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                max-width: 90vw; /* importante */
+                white-space: normal; /* permite saltos de línea */
+            }
+
+            p {
+                font-family: Arial;
+                font-size: medium;
+                text-align: center;
+            }
+
+            @media (max-width: 900px) {
+                /* Styles for mobile devices with a maximum width of 767px */
+                #playButton {
+                    font-family: 'Robus-BWqOd';
+                    font-size: 15vw; /* Adjust the font size as per your preference */
+                }
+
+                p {
+                    font-size: 4vw;
+                }
+            }
+
+            #hud {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(0, 0, 0, 0.6);
+                padding: 12px 20px;
+                border-radius: 12px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+                font-family: 'Arial', sans-serif;
+                color: #ffffff;
+                font-size: 18px;
+                line-height: 1.6;
+                z-index: 10002;
+                text-align: right;
+            }
+
+            #hud div {
+                margin-bottom: 4px;
+            }
+
+            #hud div:last-child {
+                margin-bottom: 0;
+            }
+
+            #gameOverWindow {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.75);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10003;
+            }
+
+            .game-over-box {
+                background: #222;
+                color: #fff;
+                padding: 30px 40px;
+                border-radius: 12px;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                box-shadow: 0 0 15px rgba(0,0,0,0.6);
+            }
+
+            #restartButton {
+                margin-top: 15px;
+                padding: 10px 20px;
+                font-size: 16px;
+                background: #750404;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+
+            #restartButton:hover {
+                background: #750404;
+            }
+
+            #startButton {
+                margin-top: 15px;
+                padding: 10px 20px;
+                font-size: 16px;
+                background: #750404;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+
+            #startButton:hover {
+                background: #750404;
+            }
+
+            #gameInstructions {
+                margin-top: 20px;
+                background: rgba(0, 0, 0, 0.6);
+                padding: 15px 20px;
+                border-radius: 10px;
+                font-family: Arial, sans-serif;
+                font-size: 16px;
+                color: white;
+                text-align: left;
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+                max-width: 800px; 
+                margin-left: auto;
+                margin-right: auto;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                box-sizing: border-box;
+            }
+
+
+        </style>
+    </head>
+    <body>
+
+        <!-- HUD SIEMPRE VISIBLE -->
+        <div id="hud">                    
+            <div id="score">Puntos: 0</div>
+            <div id="highscore">Récord: 0</div>
+            <div id="timer">Tiempo: 60</div>
+        </div>
+
+        <div id="blocker">
+            <div id="instructions">
+                <div id="playButton">
+                    <div style="font-size: 5vw; margin-bottom: 10px;">FIRE SHOOTER</div>
+                    <div style="text-align: center;">                
+                        <button id="startButton">Iniciar juego</button>
+                    </div>
+                    
+                    <div id="gameInstructions">
+                        <p><strong>🔥 Misión:</strong> Eres un agente de élite atrapado en un edificio abandonado.
+                        Tu objetivo es localizar y destruir los <strong>objetivos</strong> en el entorno antes
+                        de que se agote el tiempo. Cada objetivo destruido suma puntos. ¡Apunta con precisión y no te distraigas!</p>
+                    
+                        <p><strong>🎮 Controles:</strong><br>
+                            Doble ESC - Pausa<br>
+                            W A S D o FLECHAS - Moverse<br>
+                            Clic izquierdo - Disparar
+                        </p>
+                    
+                        <p style="text-align: center; font-style: italic;">¡Buena suerte, agente! 💥</p>
+                    </div>                    
+                </div>
+            </div>
+        </div>
+  
+        <img id="crosshair" src="./images/reticle.png" alt="Crosshair">
+
+        <div id="pauseOverlay" style="display: none; position: fixed; top: 0; left: 0; 
+            width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); 
+            z-index: 10004; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; color: white; font-family: Arial, sans-serif;">
+            <h2>JUEGO PAUSADO</h2>
+            <button id="resumeButton" style="margin-top: 20px; padding: 10px 20px; font-size: 16px;
+                background: #750404; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                Continuar
+            </button>
+        </div>
+
+        <div id="gameOverWindow" style="display:none;">
+            <div class="game-over-box">
+                <h2>¡Tiempo terminado!</h2>
+                <p id="finalScore">Puntaje: 0</p>
+                <button id="restartButton">Volver a jugar</button>
+            </div>
+        </div>
+
+
+        <script src="https://cdn.jsdelivr.net/npm/three@latest/build/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@latest/examples/jsm/webxr/VRButton.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@latest/examples/js/controls/OrbitControls.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@latest/examples/js/controls/PointerLockControls.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@latest/examples/js/loaders/GLTFLoader.js"></script>
+
+        <script type="module">
+            import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@latest/examples/jsm/webxr/VRButton.js';
+
+            let score = 0;
+            let highScore = localStorage.getItem("highScore") || 0;
+            let timer = 60;
+            let timerInterval = null;
+            let gameStarted = false;
+            let gamePaused = false;
+
+            document.getElementById('highscore').textContent = `Récord: ${highScore}`;
+
+            // Set up the scene
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, .1, 1000);
+            camera.position.set(0, 1, 0); // Set camera position 0.1 units above the grid
+
+            // Adjust the camera's near clipping plane value
+            camera.near = .015; // Set a smaller value, like 0.1
+            camera.updateProjectionMatrix();
+
+            // Setup Gun Object
+            var tommyGun;
+            // 3D Abandoned Building MOdel
+            var abandonedBuilding;
+            //Array for bullet hole meshes
+            let bulletHoles = [];
+            //Gun Firing Variable to track when gun is firing
+            let isFiring = false
+            // Counter variable to keep track of the number of bullets
+            var bulletCount = 0;
+            let amuleto;
+
+
+            // Create the renderer
+            var renderer = new THREE.WebGLRenderer();
+            renderer.xr.enabled = true;
+            document.body.appendChild(VRButton.createButton(renderer));
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            document.body.appendChild(VRButton.createButton(renderer));
+
+            //Create ray caster instance
+            var raycaster = new THREE.Raycaster();
+            //Create mouse instance
+            var mouse = new THREE.Vector2();
+            //Create array to store bullets
+            var bullets = [];
+
+            // Variables for tracking time and adding bullet hole meshes
+            let lastMeshAdditionTime = 0;
+            const meshAdditionInterval = 100; // Interval duration in milliseconds
+
+            // Keyboard controls
+            var moveForward = false;
+            var moveBackward = false;
+            var moveLeft = false;
+            var moveRight = false;
+
+            ///flashing light // Create a point light
+            const tommyGunLight = new THREE.PointLight(0xffffff, 100, 100); // Adjust the light color and intensity as needed
+            tommyGunLight.position.set(0, 0, 0); // Set the light position
+            tommyGunLight.visible = false
+            // Add the light to the scene initially
+            scene.add(tommyGunLight);
+
+
+            // Gravity effect variables
+            var gravity = new THREE.Vector3(0, -0.01, 0); // Adjust the gravity strength as needed
+            var maxGravityDistance = 2; // Adjust the maximum distance affected by gravity as needed
+
+            // Add PointerLockControls
+            var controls = new THREE.PointerLockControls(camera, document.body);
+
+            // Create a grid
+            var gridHelper = new THREE.GridHelper(20, 20);
+            scene.add(gridHelper);
+
+            // Set up pointer lock controls
+            var blocker = document.getElementById('blocker');
+            var instructions = document.getElementById('instructions');
+            var playButton = document.getElementById('playButton');
+
+            playButton.addEventListener('click', function () {
+                controls.lock();
+                startGame();
+            });
+
+            controls.addEventListener('lock', function () {
+                instructions.style.display = 'none';
+                blocker.style.display = 'none';
+                document.getElementById('crosshair').style.display = 'block'; // Show the crosshair when screen is locked
+            });
+
+            controls.addEventListener('unlock', function () {
+                document.getElementById('crosshair').style.display = 'none';
+
+                if (!gameStarted && !gamePaused) {
+                    // Mostrar menú inicial
+                    blocker.style.display = 'block';
+                    instructions.style.display = '';
+                    document.getElementById('pauseOverlay').style.display = 'none'; // 🔴 OCULTAR la pausa si estaba visible
+                } else if (gamePaused) {
+                    // Mostrar solo la pausa si el juego está en curso
+                    document.getElementById('pauseOverlay').style.display = 'flex';
+                }
+            });
+
+            // Resize renderer when window size changes
+            window.addEventListener('resize', function () {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            scene.add(controls.getObject());
+
+            // Create an ambient light with brightness
+            var ambientLight = new THREE.AmbientLight(0xffffff, 2); // Adjust the color as needed
+            scene.add(ambientLight);
+
+            // Load GLTF model
+            var loader = new THREE.GLTFLoader();
+            loader.load('./models/gltf/tommy_gun.glb', function (gltf) {
+                gltf.scene.scale.set(.25, .25, .25)
+
+                // Set the cube's position to be equal to the camera's position
+                gltf.scene.position.set(camera.position.x, camera.position.y, camera.position.z);
+                tommyGun = gltf.scene
+                scene.add(gltf.scene)
+
+                // Add a point light to the gun
+                var tommyGunLight = new THREE.PointLight(0xffffff, 1);
+                tommyGunLight.position.set(.025, -.15, 0); // Adjust the position of the light relative to the gun
+                tommyGun.add(tommyGunLight);
+
+            });
+
+            //Load building model
+            loader.load(
+                'https://www.shanebrumback.com/models/glb/low_poly_abandoned_brick_room.glb',
+                function (gltf) {
+                    abandonedBuilding = gltf.scene;
+                    abandonedBuilding.position.y = .008
+                    scene.add(abandonedBuilding);
+
+                    spawnAmuleto();
+                });
+
+
+            var onKeyDown = function (event) {
+                switch (event.keyCode) {
+                    case 38: // up arrow
+                    case 87: // W key
+                        moveForward = true;
+                        break;
+                    case 37: // left arrow
+                    case 65: // A key
+                        moveLeft = true;
+                        break;
+                    case 40: // down arrow
+                    case 83: // S key
+                        moveBackward = true;
+                        break;
+                    case 39: // right arrow
+                    case 68: // D key
+                        moveRight = true;
+                        break;
+                }
+            };
+
+            var onKeyUp = function (event) {
+                switch (event.keyCode) {
+                    case 38: // up arrow
+                    case 87: // W key
+                        moveForward = false;
+                        break;
+                    case 37: // left arrow
+                    case 65: // A key
+                        moveLeft = false;
+                        break;
+                    case 40: // down arrow
+                    case 83: // S key
+                        moveBackward = false;
+                        break;
+                    case 39: // right arrow
+                    case 68: // D key
+                        moveRight = false;
+                        break;
+                }
+            };
+
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+           
+            function startGame() {
+                if (gameStarted && !gamePaused) return;
+
+                gameStarted = true;
+
+                if (gamePaused) {
+                    gamePaused = false;
+                } else {
+                    score = 0;
+                    timer = 60;
+                    document.getElementById('score').textContent = `Puntos: ${score}`;
+                }
+
+                document.getElementById('timer').textContent = `Tiempo: ${timer}`;
+
+                clearInterval(timerInterval); // evitar múltiples intervalos
+
+                timerInterval = setInterval(() => {
+                    if (!gamePaused && timer > 0) {
+                        timer--;
+                        document.getElementById('timer').textContent = `Tiempo: ${timer}`;
+                        if (timer <= 0) {
+                            clearInterval(timerInterval);
+                            endGame();
+                        }
+                    }
+                }, 1000);
+            }
+
+            function endGame() {
+                clearInterval(timerInterval);
+                controls.unlock();
+
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("highScore", highScore);
+                    document.getElementById('highscore').textContent = `Récord: ${highScore}`;
+                }
+
+                document.getElementById('finalScore').textContent = `Puntaje: ${score}`;
+
+                // 🔴 Mostrar menú principal e instrucciones
+                document.getElementById('blocker').style.display = 'block';
+                document.getElementById('instructions').style.display = '';
+                document.getElementById('pauseOverlay').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'none';
+
+                // 🔴 Mostrar botón de volver a jugar en el menú
+                document.getElementById('gameOverWindow').style.display = 'flex';
+            }
+
+            // Check collision with the grid
+            function checkCollision(position) {
+                var gridSize = 20;
+                var halfGridSize = gridSize / 2;
+                var margin = 0.1;
+
+                if (
+                    position.x < -halfGridSize + margin ||
+                    position.x > halfGridSize - margin ||
+                    position.z < -halfGridSize + margin ||
+                    position.z > halfGridSize - margin
+                ) {
+                    return true; // Collision detected
+                }
+
+                return false; // No collision
+            }
+
+            function spawnAmuleto() {
+                if (amuleto) {
+                    scene.remove(amuleto); // Elimina el anterior
+                }
+
+                loader.load('./models/gltf/objetivo.glb', function (gltf) {
+                    amuleto = gltf.scene;
+                    amuleto.scale.set(0.05, 0.05, 0.05); // Ajusta el tamaño si es necesario
+
+                    // Posición aleatoria dentro del cuarto (ajusta los límites según el tamaño de tu habitación)
+                    const minX = -4, maxX = 4;
+                    const minY = 0.2, maxY = 2;
+                    const minZ = -4, maxZ = 4;
+
+                    const x = THREE.MathUtils.randFloat(minX, maxX);
+                    const y = THREE.MathUtils.randFloat(minY, maxY);
+                    const z = THREE.MathUtils.randFloat(minZ, maxZ);
+
+                    amuleto.position.set(x, y, z);
+
+                    scene.add(amuleto);
+                });
+            }
+
+            function animate() {
+                renderer.setAnimationLoop(animate);
+
+    // 🔴 Evitar que el juego siga si está pausado
+                if (gamePaused) {
+                    renderer.render(scene, camera);
+                    return;
+                }
+
+    // Actualizar balas
+                updateBullets();
+
+    // Movimiento del jugador
+                if (controls.isLocked) {
+                    var acceleration = 0.003;
+                    var maxSpeed = 0.10;
+
+                    if (moveForward) {
+                        controls.speed = Math.min(controls.speed + acceleration, maxSpeed);
+                        controls.moveForward(controls.speed);
+                        if (checkCollision(controls.getObject().position)) {
+                            controls.moveForward(-controls.speed);
+                        }
+                    } else if (moveBackward) {
+                        controls.speed = Math.min(controls.speed + acceleration, maxSpeed);
+                        controls.moveForward(-controls.speed);
+                        if (checkCollision(controls.getObject().position)) {
+                            controls.moveForward(controls.speed);
+                        }
+                    } else if (moveLeft) {
+                        controls.speed = Math.min(controls.speed + acceleration, maxSpeed);
+                        controls.moveRight(-controls.speed);
+                        if (checkCollision(controls.getObject().position)) {
+                            controls.moveRight(controls.speed);
+                        }
+                    } else if (moveRight) {
+                        controls.speed = Math.min(controls.speed + acceleration, maxSpeed);
+                        controls.moveRight(controls.speed);
+                        if (checkCollision(controls.getObject().position)) {
+                            controls.moveRight(-controls.speed);
+                        }
+                    } else {
+                        controls.speed = 0;
+                    }
+                }
+
+    // Posicionar el arma
+                if (tommyGun) {
+                    tommyGun.position.copy(camera.position);
+                    tommyGun.rotation.copy(camera.rotation);
+                    tommyGun.updateMatrix();
+                    tommyGun.translateZ(-.05);
+                    tommyGun.translateY(-.05);
+                    tommyGun.translateX(-.025);
+                    tommyGun.rotateY(Math.PI / 2);
+                }
+
+    // Disparar
+                if (isFiring) {
+                    const currentTime = performance.now();
+                    if (currentTime - lastMeshAdditionTime >= meshAdditionInterval) {
+                        lastMeshAdditionTime = currentTime;
+                        const direction = raycaster.ray.direction.clone();
+
+                        let finLowObject = null;
+                        tommyGun.traverse(object => {
+                            if (object.name === 'barrel_low') finLowObject = object;
+                        });
+
+                        if (finLowObject) {
+                            const worldPosition = new THREE.Vector3();
+                            finLowObject.getWorldPosition(worldPosition);
+                            createBullet(worldPosition, direction);
+                            updateGunMuzzleFlash(worldPosition);
+                        }
+                    }
+
+                    checkBulletCollision();
+                }
+
+                faceBulletHolesToCamera();
+
+    // Mover amuleto
+                if (amuleto) {
+                    const t = performance.now() * 0.001;
+                    amuleto.position.y += Math.sin(t * 2) * 0.008;
+                    amuleto.position.x += Math.cos(t * 1.5) * 0.005;
+                    amuleto.position.z += Math.sin(t * 1.3) * 0.006;
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Add event listeners for the mouse down and mouse up events
+            window.addEventListener('mousedown', onMouseDown, false);
+            window.addEventListener('mouseup', onMouseUp, false);
+
+            function onMouseDown(event) {
+                // Check if the left mouse button is pressed (button code 0)
+                if (controls.isLocked && event.button === 0 && event.target.id !== 'playButton') {
+                    // Set isFiring to true
+                    isFiring = true;
+                }
+            }
+
+            function onMouseUp(event) {
+                // Check if the left mouse button is released (button code 0)
+                if (event.button === 0) {
+                    // Set isFiring to false
+                    isFiring = false;
+                }
+            }
+
+            function onMouseMove(event) {
+                event.preventDefault();
+
+                // Get the image element
+                const imageElement = document.getElementById('crosshair');
+
+                // Get the position of the image element on the screen
+                const imageRect = imageElement.getBoundingClientRect();
+                const imageCenterX = imageRect.left + imageRect.width / 2;
+                const imageCenterY = imageRect.top + imageRect.height / 2;
+
+                // Calculate the normalized device coordinates (-1 to 1) from the image center
+                const mouse = new THREE.Vector2();
+                mouse.x = (imageCenterX / window.innerWidth) * 2 - 1;
+                mouse.y = -(imageCenterY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+
+
+            }
+
+
+            // Mouse click event listener
+            document.addEventListener('mousemove', onMouseMove, false);
+
+
+            function faceBulletHolesToCamera() {
+                bulletHoles.forEach(function (bulletHole) {
+                    // Calculate the direction from the bullet hole to the camera
+                    var direction = camera.position.clone().sub(bulletHole.position).normalize();
+
+                    // Calculate the rotation quaternion that faces the camera
+                    var quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+
+                    // Apply the rotation to the bullet hole
+                    bulletHole.setRotationFromQuaternion(quaternion);
+                });
+            }
+
+            function checkBulletCollision() {
+    bullets.forEach(function (bullet, index) {
+        const bulletPosition = bullet.position;
+        const bulletDirection = bullet.direction;
+
+        // Crear raycaster para esta bala
+        const raycaster = new THREE.Raycaster(bulletPosition, bulletDirection);
+
+        // 🔹 Primero verificar si golpea el amuleto
+        if (amuleto) {
+            const amuletoIntersects = raycaster.intersectObject(amuleto, true);
+            if (amuletoIntersects.length > 0) {
+                scene.remove(amuleto);
+                score += 10;
+                document.getElementById('score').textContent = `Puntos: ${score}`;
+                spawnAmuleto();
+
+                scene.remove(bullet);
+                bullets.splice(index, 1); // Eliminar la bala que impactó
+                return; // Saltamos el resto
+            }
+        }
+
+        // 🔹 Verificar si golpea el edificio
+        const intersects = raycaster.intersectObject(abandonedBuilding, true);
+        if (intersects.length > 0) {
+            // Sonido de rebote cada 15 disparos
+            if (bulletCount % 15 === 0) {
+                playBulletRicochetSound();
+            }
+            bulletCount++;
+
+            const intersect = intersects[0];
+            const point = intersect.point;
+
+            // Crear agujero de bala
+            const offset = new THREE.Vector3(0, 0, 0.01);
+            const insertionOffset = new THREE.Vector3(0, 0.01, 0);
+            const insertionPoint = new THREE.Vector3().copy(point).add(offset).add(insertionOffset);
+
+            const textureLoader = new THREE.TextureLoader();
+            const material = new THREE.MeshBasicMaterial({
+                map: textureLoader.load('./images/bullet-hole.png'),
+                side: THREE.DoubleSide,
+                transparent: true,
+                depthWrite: true,
+            });
+
+            const geometry = new THREE.PlaneGeometry(0.08, 0.08);
+            const bulletHoleMesh = new THREE.Mesh(geometry, material);
+            bulletHoleMesh.position.copy(insertionPoint);
+            scene.add(bulletHoleMesh);
+            bulletHoles.push(bulletHoleMesh);
+
+            // Animar desaparición del agujero de bala
+            let opacity = 1.0;
+            const fadeOutDuration = 5000;
+            const fadeOutInterval = 50;
+
+            const fadeOutTimer = setInterval(() => {
+                opacity -= fadeOutInterval / fadeOutDuration;
+                if (opacity <= 0) {
+                    opacity = 0;
+                    clearInterval(fadeOutTimer);
+                    scene.remove(bulletHoleMesh);
+                    bulletHoles.splice(bulletHoles.indexOf(bulletHoleMesh), 1);
+                }
+                bulletHoleMesh.material.opacity = opacity;
+            }, fadeOutInterval);
+
+            // Eliminar la bala que impactó
+            scene.remove(bullet);
+            bullets.splice(index, 1);
+        }
+    });
+}
+
+            // Function to toggle the light on or off based on the isFiring variable
+            function toggleLight(isFiring) {
+                if (isFiring) {
+                    tommyGunLight.visible = !tommyGunLight.visible; // Toggle the light visibility
+                } else {
+                    tommyGunLight.visible = false; // Ensure the light is off when not firing
+                }
+            }
+
+
+
+            // Call the function whenever the value of isFiring changes
+            function updateGunMuzzleFlash(position) {
+                toggleLight(isFiring);
+                tommyGunLight.position.copy(camera.position)
+            }
+
+
+            // Function to create a bullets
+            function createBullet(position, direction) {
+
+                //play machine gun sound bite
+                playMachineGunSound();
+
+                const bulletGeometry = new THREE.SphereGeometry(0.01, 8, 8);
+                const bulletMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xFFFFFF,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+                bullet.position.copy(position);
+                bullet.direction = direction.clone().normalize();
+                bullet.distanceTraveled = 0;
+
+                // Add a point light to the bullet
+                const pointLight = new THREE.PointLight(0xFFFFFF, 10, 100);
+                pointLight.position.copy(position);
+                bullet.add(pointLight);
+
+                scene.add(bullet);
+                bullets.push(bullet);
+            }
+
+
+            // Function to update bullets
+            function updateBullets() {
+                const maxDistance = 5; // Maximum distance a bullet can travel before removal
+
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    const bullet = bullets[i];
+                    bullet.position.addScaledVector(bullet.direction, .75); // Adjust the speed of the bullet here
+                    bullet.distanceTraveled += 0.4;
+
+                    if (bullet.distanceTraveled >= maxDistance) {
+                        scene.remove(bullet);
+                        bullets.splice(i, 1);
+                    }
+                }
+            }
+
+
+            // Variables for audio context and machine gun sound
+            let audioContext;
+            let machineGunSoundBuffer;
+            let bulletRicochetSoundBuffer;
+
+            // Function to load an audio file
+            function loadAudioFile(url, callback) {
+                const request = new XMLHttpRequest();
+                request.open('GET', url, true);
+                request.responseType = 'arraybuffer';
+
+                request.onload = function () {
+                    audioContext.decodeAudioData(request.response, function (buffer) {
+                        if (typeof callback === 'function') {
+                            callback(buffer);
+                        }
+                    });
+                };
+
+                request.send();
+            }
+
+
+            // Function to play a sound from a buffer
+            function playSound(buffer, volume, loop = false) {
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+
+                // Connect the audio nodes
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Set the buffer, volume, and loop
+                source.buffer = buffer;
+                gainNode.gain.value = volume;
+
+                // Start playing the sound
+                source.start();
+
+            }
+
+            // Function to play the machine gun sound
+            function playMachineGunSound() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                if (!machineGunSoundBuffer) {
+                    loadAudioFile('./sounds/tommy-gun-single-bullet.mp3', function (buffer) {
+                        machineGunSoundBuffer = buffer;
+                        playSound(buffer, 1, isFiring); // Pass the isFiring value to control continuous playback
+                    });
+                } else {
+                    playSound(machineGunSoundBuffer, 1, isFiring); // Pass the isFiring value to control continuous playback
+                }
+            }
+
+
+            // Function to play the bullet ricochet sound
+            function playBulletRicochetSound() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                if (!bulletRicochetSoundBuffer) {
+                    loadAudioFile('./sounds/bullet-ricochet.mp3', function (buffer) {
+                        bulletRicochetSoundBuffer = buffer;
+                        playSound(buffer, 1, false); // Play the sound once, not continuous playback
+                    });
+                } else {
+                    playSound(bulletRicochetSoundBuffer, 1, false); // Play the sound once, not continuous playback
+                }
+            }
+
+            // Event listener for mouse down event
+            document.addEventListener('mousedown', function (event) {
+                // Check if the left mouse button is pressed (button code 0)
+                if (controls.isLocked && event.button === 0 && event.target.id !== 'playButton') {
+                    playMachineGunSound();
+                }
+            });
+
+            // Event listener for mouse up event
+            document.addEventListener('mouseup', function (event) {
+                // Check if the left mouse button is released (button code 0)
+                if (event.button === 0) {
+                    tommyGunLight.visible = false;
+                    isFiring = false;
+
+                }
+            });
+
+            document.getElementById('restartButton').addEventListener('click', () => {
+                document.getElementById('gameOverWindow').style.display = 'none';
+
+                // Mostrar nuevamente el menú de inicio con instrucciones
+                document.getElementById('blocker').style.display = 'block';
+                document.getElementById('instructions').style.display = '';
+                document.getElementById('pauseOverlay').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'none';
+
+                // Resetear estados para iniciar manualmente más tarde
+                gameStarted = false;
+                gamePaused = false;
+            });
+
+            document.getElementById('startButton').addEventListener('click', () => {
+                controls.lock();
+
+                if (gamePaused) {
+                    gamePaused = false;
+                } else {
+                    gameStarted = false;
+                }
+
+                startGame();
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.code === 'Escape' && gameStarted && !gamePaused) {
+                    gamePaused = true;
+                    controls.unlock();
+                    document.getElementById('pauseOverlay').style.display = 'flex';
+                }
+            });
+
+
+            document.getElementById('resumeButton').addEventListener('click', () => {
+                document.getElementById('pauseOverlay').style.display = 'none';
+                controls.lock();
+                gamePaused = false;
+            });
+
+            window.addEventListener('load', () => {
+                // Mostrar menú inicial
+                document.getElementById('blocker').style.display = 'block';
+                document.getElementById('instructions').style.display = '';
+                document.getElementById('pauseOverlay').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'none';
+                document.getElementById('gameOverWindow').style.display = 'none';
+
+                // Estados lógicos iniciales
+                gameStarted = false;
+                gamePaused = false;
+            });
+
+        </script>
+
+        <footer style="
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.75);
+        color: white;
+        text-align: center;
+        padding: 10px 0;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        z-index: 10005;">
+        Desarrollado por Damaris Domínguez Zapata | Graficación 3D —
+        <a href="https://github.com/DamiDgueZ?tab=repositories" target="_blank" style="color: #66ccff; text-decoration: none;">
+            Mi_GitHub
+        </a>
+
+    </footer>
+    
+    </body>
+</html>

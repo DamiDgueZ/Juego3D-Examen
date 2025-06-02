@@ -623,29 +623,29 @@
             }
 
             // Disparar desde el controlador (VR o normal)
-            if (isFiring) {
-                const tempMatrix = new THREE.Matrix4();
-                tempMatrix.identity().extractRotation(controller1.matrixWorld);
+            if (isFiring && controller1) {
+                if (controller1.matrixWorld) {
+                    const tempMatrix = new THREE.Matrix4();
+                    tempMatrix.identity().extractRotation(controller1.matrixWorld);
 
-                const direction = new THREE.Vector3(0, 0, -1).applyMatrix4(tempMatrix);
-                const position = new THREE.Vector3().setFromMatrixPosition(controller1.matrixWorld);
+                    const direction = new THREE.Vector3(0, 0, -1).applyMatrix4(tempMatrix);
+                    const position = new THREE.Vector3().setFromMatrixPosition(controller1.matrixWorld);
 
-                const currentTime = performance.now();
-                if (currentTime - lastMeshAdditionTime >= meshAdditionInterval) {
-                    lastMeshAdditionTime = currentTime;
-                    createBullet(position, direction);
-                }
+                    const currentTime = performance.now();
+                    if (currentTime - lastMeshAdditionTime >= meshAdditionInterval) {
+                        lastMeshAdditionTime = currentTime;
+                        createBullet(position, direction);
+                    }
 
-                // También detectar si disparamos al botón de inicio (solo una vez)
-                if (vrStartButton) {
-                    const ray = new THREE.Raycaster();
-                    ray.set(position, direction);
-
-                    const intersects = ray.intersectObject(vrStartButton);
-                    if (intersects.length > 0) {
-                        scene.remove(vrStartButton);
-                        vrStartButton = null;
-                        startGame(); // 👈 inicia el juego
+                    if (vrStartButton) {
+                        const ray = new THREE.Raycaster();
+                        ray.set(position, direction);
+                        const intersects = ray.intersectObject(vrStartButton);
+                        if (intersects.length > 0) {
+                            scene.remove(vrStartButton);
+                            vrStartButton = null;
+                            startGame();
+                        }
                     }
                 }
             }
@@ -664,7 +664,7 @@
             renderer.render(scene, camera);
         }
 
-         animate();
+
 
         // Add event listeners for the mouse down and mouse up events
         window.addEventListener('mousedown', onMouseDown, false);

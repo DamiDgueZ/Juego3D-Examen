@@ -568,13 +568,16 @@
         function animate() {
             renderer.setAnimationLoop(animate);
 
+            // 🔴 Evitar que el juego siga si está pausado
             if (gamePaused) {
                 renderer.render(scene, camera);
                 return;
             }
 
+            // Actualizar balas
             updateBullets();
 
+            // Movimiento del jugador
             if (controls.isLocked) {
                 var acceleration = 0.003;
                 var maxSpeed = 0.10;
@@ -608,6 +611,7 @@
                 }
             }
 
+            // Posicionar el arma
             if (tommyGun) {
                 tommyGun.position.copy(camera.position);
                 tommyGun.rotation.copy(camera.rotation);
@@ -618,31 +622,38 @@
                 tommyGun.rotateY(Math.PI / 2);
             }
 
-            if (isFiring && controller1 && controller1.matrixWorld) {
-                const tempMatrix = new THREE.Matrix4().extractRotation(controller1.matrixWorld);
-                const direction = new THREE.Vector3(0, 0, -1).applyMatrix4(tempMatrix).normalize();
-                const position = new THREE.Vector3().setFromMatrixPosition(controller1.matrixWorld);
+            // Disparar desde el controlador (VR o normal)
+            if (isFiring && controller1) {
+                if (controller1.matrixWorld) {
+                    const tempMatrix = new THREE.Matrix4();
+                    tempMatrix.identity().extractRotation(controller1.matrixWorld);
 
-                const currentTime = performance.now();
-                if (currentTime - lastMeshAdditionTime >= meshAdditionInterval) {
-                    lastMeshAdditionTime = currentTime;
-                    createBullet(position, direction);
-                }
+                    const direction = new THREE.Vector3(0, 0, -1).applyMatrix4(tempMatrix);
+                    const position = new THREE.Vector3().setFromMatrixPosition(controller1.matrixWorld);
 
-                if (vrStartButton) {
-                    const ray = new THREE.Raycaster(position, direction);
-                    const intersects = ray.intersectObject(vrStartButton);
-                    if (intersects.length > 0) {
-                        scene.remove(vrStartButton);
-                        vrStartButton = null;
-                        startGame();
+                    const currentTime = performance.now();
+                    if (currentTime - lastMeshAdditionTime >= meshAdditionInterval) {
+                        lastMeshAdditionTime = currentTime;
+                        createBullet(position, direction);
+                    }
+
+                    if (vrStartButton) {
+                        const ray = new THREE.Raycaster();
+                        ray.set(position, direction);
+                        const intersects = ray.intersectObject(vrStartButton);
+                        if (intersects.length > 0) {
+                            scene.remove(vrStartButton);
+                            vrStartButton = null;
+                            startGame();
+                        }
                     }
                 }
             }
 
-            // ✅ Estas tres líneas deben estar DENTRO de animate()
+            // Acomodar los agujeros de bala
             faceBulletHolesToCamera();
 
+            // Movimiento del amuleto
             if (amuleto) {
                 const t = performance.now() * 0.001;
                 amuleto.position.y += Math.sin(t * 2) * 0.008;
@@ -653,7 +664,6 @@
             renderer.render(scene, camera);
         }
 
-        // ✅ Llamada final para iniciar
         animate();
 
         // Add event listeners for the mouse down and mouse up events
@@ -809,13 +819,13 @@
 
 
         // Function to create a bullets
-        function createBullet(position, direction) {
+        function createBullet(startPos, direction) {
             const bullet = new THREE.Mesh(
                 new THREE.SphereGeometry(0.02, 8, 8),
                 new THREE.MeshBasicMaterial({ color: 0xffff00 })
             );
-            bullet.position.copy(position);
-            bullet.direction = direction.clone();  // ✅ dirección bien definida
+            bullet.position.copy(startPos);
+            bullet.direction = direction.clone(); // dirección válida
 
             bullet.userData.birthTime = performance.now();
             scene.add(bullet);

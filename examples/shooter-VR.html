@@ -451,6 +451,22 @@
             document.addEventListener('keyup', onKeyUp);
            
             function startGame() {
+                let vrStartButton;
+                const loaderText = new THREE.FontLoader();
+
+                loaderText.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+                    const geometry = new THREE.TextGeometry('Iniciar Juego', {
+                        font: font,
+                        size: 0.1,
+                        height: 0.02,
+                    });
+
+                    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+                    vrStartButton = new THREE.Mesh(geometry, material);
+                    vrStartButton.position.set(0, 1.5, -2); // Justo al frente
+                    scene.add(vrStartButton);
+                });
+
                 if (gameStarted && !gamePaused) return;
 
                 gameStarted = true;
@@ -544,7 +560,25 @@
             }
 
             function animate() {
+                
                 renderer.setAnimationLoop(animate);
+
+                if (isFiring && vrStartButton) {
+                    const tempMatrix = new THREE.Matrix4();
+                    tempMatrix.identity().extractRotation(controller1.matrixWorld);
+
+                    const ray = new THREE.Raycaster();
+                    const direction = new THREE.Vector3(0, 0, -1).applyMatrix4(tempMatrix);
+                    const origin = new THREE.Vector3().setFromMatrixPosition(controller1.matrixWorld);
+                    ray.set(origin, direction);
+
+                    const intersects = ray.intersectObject(vrStartButton);
+                    if (intersects.length > 0) {
+                        scene.remove(vrStartButton);
+                        vrStartButton = null;
+                        startGame(); // 👈 inicia el juego directamente
+                    }
+                }
 
     // 🔴 Evitar que el juego siga si está pausado
                 if (gamePaused) {

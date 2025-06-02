@@ -568,16 +568,13 @@
         function animate() {
             renderer.setAnimationLoop(animate);
 
-            // 🔴 Evitar que el juego siga si está pausado
             if (gamePaused) {
                 renderer.render(scene, camera);
                 return;
             }
 
-            // Actualizar balas
             updateBullets();
 
-            // Movimiento del jugador
             if (controls.isLocked) {
                 var acceleration = 0.003;
                 var maxSpeed = 0.10;
@@ -611,7 +608,6 @@
                 }
             }
 
-            // Posicionar el arma
             if (tommyGun) {
                 tommyGun.position.copy(camera.position);
                 tommyGun.rotation.copy(camera.rotation);
@@ -622,45 +618,42 @@
                 tommyGun.rotateY(Math.PI / 2);
             }
 
-            // Disparar desde el controlador (VR o normal)
             if (isFiring && controller1 && controller1.matrixWorld) {
                 const tempMatrix = new THREE.Matrix4().extractRotation(controller1.matrixWorld);
                 const direction = new THREE.Vector3(0, 0, -1).applyMatrix4(tempMatrix).normalize();
                 const position = new THREE.Vector3().setFromMatrixPosition(controller1.matrixWorld);
 
-                // Disparar bala normal
                 const currentTime = performance.now();
                 if (currentTime - lastMeshAdditionTime >= meshAdditionInterval) {
                     lastMeshAdditionTime = currentTime;
-                    createBullet(position, direction); // ✅ Disparo
+                    createBullet(position, direction);
                 }
 
-                // Revisar si le diste al botón de inicio (una sola vez)
                 if (vrStartButton) {
                     const ray = new THREE.Raycaster(position, direction);
                     const intersects = ray.intersectObject(vrStartButton);
                     if (intersects.length > 0) {
                         scene.remove(vrStartButton);
                         vrStartButton = null;
-                        startGame(); // ✅ Inicia juego desde botón
+                        startGame();
                     }
                 }
             }
+
+            // ✅ Estas tres líneas deben estar DENTRO de animate()
+            faceBulletHolesToCamera();
+
+            if (amuleto) {
+                const t = performance.now() * 0.001;
+                amuleto.position.y += Math.sin(t * 2) * 0.008;
+                amuleto.position.x += Math.cos(t * 1.5) * 0.005;
+                amuleto.position.z += Math.sin(t * 1.3) * 0.006;
+            }
+
+            renderer.render(scene, camera);
         }
 
-        // Acomodar los agujeros de bala
-        faceBulletHolesToCamera();
-
-        // Movimiento del amuleto
-        if (amuleto) {
-            const t = performance.now() * 0.001;
-            amuleto.position.y += Math.sin(t * 2) * 0.008;
-            amuleto.position.x += Math.cos(t * 1.5) * 0.005;
-            amuleto.position.z += Math.sin(t * 1.3) * 0.006;
-        }
-
-        renderer.render(scene, camera);
-
+        // ✅ Llamada final para iniciar
         animate();
 
         // Add event listeners for the mouse down and mouse up events

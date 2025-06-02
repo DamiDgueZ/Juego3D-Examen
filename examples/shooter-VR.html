@@ -277,6 +277,21 @@
             var renderer = new THREE.WebGLRenderer();
             renderer.xr.enabled = true;
             document.body.appendChild(VRButton.createButton(renderer));
+            
+            let controller1, controller2;
+
+            controller1 = renderer.xr.getController(0);
+            controller2 = renderer.xr.getController(1);
+
+            controller1.addEventListener('selectstart', () => { isFiring = true; });
+            controller1.addEventListener('selectend', () => { isFiring = false; });
+
+            controller2.addEventListener('selectstart', () => { isFiring = true; });
+            controller2.addEventListener('selectend', () => { isFiring = false; });
+
+            scene.add(controller1);
+            scene.add(controller2);
+
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.xr.enabled = true;
@@ -768,8 +783,6 @@
                     tommyGunLight.visible = false; // Ensure the light is off when not firing
                 }
             }
-
-
 
             // Call the function whenever the value of isFiring changes
             function updateGunMuzzleFlash(position) {

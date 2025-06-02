@@ -296,7 +296,6 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
-            document.body.appendChild(VRButton.createButton(renderer));
 
             //Create ray caster instance
             var raycaster = new THREE.Raycaster();
@@ -603,6 +602,15 @@
 
     // Disparar
                 if (isFiring) {
+
+                    const tempMatrix = new THREE.Matrix4();
+                    tempMatrix.identity().extractRotation(controller1.matrixWorld);
+
+                    const direction = new THREE.Vector3(0, 0, -1).applyMatrix4(tempMatrix);
+                    const position = new THREE.Vector3().setFromMatrixPosition(controller1.matrixWorld);
+
+                    createBullet(position, direction);
+
                     const currentTime = performance.now();
                     if (currentTime - lastMeshAdditionTime >= meshAdditionInterval) {
                         lastMeshAdditionTime = currentTime;

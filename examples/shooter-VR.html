@@ -670,6 +670,9 @@
                 // Opcional: aplicar un ajuste fino en la posición del arma (si se ve muy lejos o mal orientada)
                 tommyGun.translateY(-0.05); // Baja un poco el arma
                 tommyGun.translateZ(-0.1);  // Acércala al mando
+                // Rota el arma para que se vea empuñada correctamente
+                tommyGun.rotateX(Math.PI / 2);  // Rota 90 grados en X (puedes ajustar)
+                tommyGun.rotateZ(Math.PI / 2);  // Rota 90 grados en Z (ajusta según convenga)
             }
 
             // Disparar desde el controlador (VR o normal)

@@ -658,14 +658,18 @@
             }
 
             // Posicionar el arma
-            if (tommyGun) {
-                tommyGun.position.copy(camera.position);
-                tommyGun.rotation.copy(camera.rotation);
-                tommyGun.updateMatrix();
-                tommyGun.translateZ(-.05);
-                tommyGun.translateY(-.05);
-                tommyGun.translateX(-.025);
-                tommyGun.rotateY(Math.PI / 2);
+            if (tommyGun && controller1) {
+                // Posiciona el arma en la misma posición que el controlador VR
+                tommyGun.position.setFromMatrixPosition(controller1.matrixWorld);
+
+                // Obtiene la rotación del controlador
+                const quaternion = new THREE.Quaternion();
+                controller1.getWorldQuaternion(quaternion);
+                tommyGun.setRotationFromQuaternion(quaternion);
+
+                // Opcional: aplicar un ajuste fino en la posición del arma (si se ve muy lejos o mal orientada)
+                tommyGun.translateY(-0.05); // Baja un poco el arma
+                tommyGun.translateZ(-0.1);  // Acércala al mando
             }
 
             // Disparar desde el controlador (VR o normal)
@@ -1064,7 +1068,6 @@
         </a>
 
     </footer>
-//Hola
 </body>
 
 </html>

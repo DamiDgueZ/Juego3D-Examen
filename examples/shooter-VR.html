@@ -254,6 +254,7 @@
         let timerInterval = null;
         let gameStarted = false;
         let gamePaused = false;
+        let vrStartButton = null;
 
         document.getElementById('highscore').textContent = `Récord: ${highScore}`;
 
@@ -302,6 +303,26 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
+
+        let joystickX = 0, joystickY = 0;
+
+        renderer.xr.addEventListener('sessionstart', () => {
+            const session = renderer.xr.getSession();
+
+            session.addEventListener('inputsourceschange', () => {
+                for (const source of session.inputSources) {
+                    if (source && source.gamepad) {
+                        const gp = source.gamepad;
+
+                        // Se actualiza cada 50ms
+                        setInterval(() => {
+                            joystickX = gp.axes[2] || 0; // Horizontal
+                            joystickY = gp.axes[3] || 0; // Vertical
+                        }, 50);
+                    }
+                }
+            });
+        });
 
         //Create ray caster instance
         var raycaster = new THREE.Raycaster();
@@ -609,6 +630,18 @@
                 } else {
                     controls.speed = 0;
                 }
+
+                if (renderer.xr.isPresenting) {
+                    const speed = 0.05;
+
+                    if (Math.abs(joystickY) > 0.1) {
+                        controls.moveForward(-joystickY * speed);
+                    }
+
+                    if (Math.abs(joystickX) > 0.1) {
+                        controls.moveRight(joystickX * speed);
+                    }
+                }
             }
 
             // Posicionar el arma
@@ -831,8 +864,8 @@
             scene.add(bullet);
             bullets.push(bullet);
 
-            //shootSound.currentTime = 0;
-            //shootSound.play();
+            playMachineGunSound();
+
         }
 
         // Function to update bullets
